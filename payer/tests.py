@@ -3,16 +3,18 @@ import json
 from dataclasses import dataclass
 
 from core.models import User
-from core.test_helpers import create_test_interactive_user
+from core.test_helpers import create_test_interactive_user, create_claim_admin_role
 from django.conf import settings
 from graphene_django.utils.testing import GraphQLTestCase
 from graphql_jwt.shortcuts import get_token
 from location.models import Location
-from location.test_helpers import create_test_location, assign_user_districts
+from location.test_helpers import create_test_location, assign_user_districts, create_basic_test_locations
 from rest_framework import status
 from insuree.test_helpers import create_test_insuree
+from product.test_helpers import create_test_product
 from location.test_helpers import create_test_location, create_test_health_facility, create_test_village
 from payer.models import Payer
+from payer.test_helpers import create_test_payer
 from product.models import Product
 
 
@@ -33,11 +35,13 @@ class PayerGQLTestCase(openIMISGraphQLTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        create_basic_test_locations()
         cls.test_village = create_test_village()
         cls.test_insuree = create_test_insuree(with_family=True, is_head=True, custom_props={'current_village':cls.test_village}, family_custom_props={'location':cls.test_village})
+        cls.test_payer = create_test_payer()
         cls.admin_user = create_test_interactive_user(username="testLocationAdmin")
         cls.admin_token = get_token(cls.admin_user, DummyContext(user=cls.admin_user))
-        cls.ca_user = create_test_interactive_user(username="testLocationNoRight", roles=[9])
+        cls.ca_user = create_test_interactive_user(username="testLocationNoRight", roles=[create_claim_admin_role().id])
         cls.ca_token = get_token(cls.ca_user, DummyContext(user=cls.ca_user))
         cls.admin_dist_user = create_test_interactive_user(username="testLocationDist")
         assign_user_districts(cls.admin_dist_user, ["R1D1", "R2D1", "R2D2", "R2D1", cls.test_village.parent.parent.code])
@@ -112,8 +116,8 @@ class PayerGQLTestCase(openIMISGraphQLTestCase):
                 "amount": 34576,
                 "clientMutationId": "6e3747b2-135b-4258-ab2b-d00bb2c4f640",
                 "payDate": "2023-12-12",
-                "payerId": Payer.objects.first().id,
-                "productId": Product.objects.first().id,
+                "payerId": self.test_payer.id,
+                "productId": create_test_product().id,
                 "receipt": "324534"
               }
             },
@@ -179,16 +183,10 @@ class PayerGQLTestCase(openIMISGraphQLTestCase):
         }
         ''',
             headers={"HTTP_AUTHORIZATION": f"Bearer {self.admin_token}"},
-            variables={ 'first':10, 'payerId':Payer.objects.first().uuid},
+            variables={ 'first':10, 'payerId':self.test_payer.uuid},
         )
 
         self.assertEquals(response.status_code, status.HTTP_200_OK)
         content = json.loads(response.content)
 
         self.assertResponseNoErrors(response)
-
-        
-
-
-
-

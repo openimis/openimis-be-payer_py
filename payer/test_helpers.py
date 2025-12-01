@@ -1,9 +1,10 @@
 import uuid
 
 from contribution.models import Payer, Premium
+from location.test_helpers import create_test_location
 
 
-def create_test_payer(payer_type=Payer.PAYER_TYPE_OTHER, custom_props=None):
+def create_test_payer(payer_type=Payer.PAYER_TYPE_OTHER, custom_props=None, location=None):
     if custom_props is None:
         custom_props = {}
     else:
@@ -19,4 +20,7 @@ def create_test_payer(payer_type=Payer.PAYER_TYPE_OTHER, custom_props=None):
             **custom_props
         }
     )
+    if location is not None:
+        payer.location = location
+        payer.save()
     return payer
