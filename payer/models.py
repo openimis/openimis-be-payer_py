@@ -1,10 +1,10 @@
 import uuid
-import itertools
 from django.conf import settings
 from core import models as core_models
 from django.db import models
 from django.utils.translation import gettext as _
 from product.models import Product
+
 
 class PayerType(models.Model):
     code = models.CharField(db_column="Code", primary_key=True, max_length=1)
@@ -68,12 +68,13 @@ class Payer(core_models.VersionedModel):
 
         queryset = cls.filter_queryset(queryset)
         if settings.ROW_SECURITY and not user._u.is_imis_admin:
-            queryset = LocationManager().build_user_location_filter_query(user._u, queryset = Payer.objects, loc_types=['R', 'D'])
+            queryset = LocationManager().build_user_location_filter_query(user._u, queryset=Payer.objects, loc_types=['R', 'D'])
         return queryset
 
     class Meta:
         managed = True
         db_table = "tblPayer"
+
 
 class Funding(core_models.HistoryModel):
     class FundingStatus(models.TextChoices):
@@ -102,11 +103,12 @@ class Funding(core_models.HistoryModel):
         related_name="fundings",
     )
     receipt = models.CharField(db_column="Receipt", max_length=50)
-    
+
     class Meta:
         managed = True
         db_table = "tblFunding"
-        
+
+
 class PayerMutation(core_models.UUIDModel, core_models.ObjectMutation):
     payer = models.ForeignKey(Payer, models.DO_NOTHING, related_name="+")
     mutation = models.ForeignKey(

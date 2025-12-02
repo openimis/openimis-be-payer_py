@@ -7,8 +7,7 @@ from django.utils.translation import gettext as _, gettext_lazy
 from payer.apps import PayerConfig
 from core.schema import OrderedDjangoFilterConnectionField
 from .models import Payer
-from location.models import Location, LocationManager
-from product.schema import ProductGQLType
+from location.models import LocationManager
 
 from .gql_queries import PayerGQLType, FundingGQLType
 
@@ -29,10 +28,9 @@ class Query(graphene.ObjectType):
         parent_location_level=graphene.Int(),
         orderBy=graphene.List(of_type=graphene.String),
     )
-    
+
     funding = graphene.Field(FundingGQLType, uuid=graphene.UUID())
 
-        
     payers = OrderedDjangoFilterConnectionField(
         PayerGQLType,
         show_history=graphene.Boolean(),
@@ -61,12 +59,10 @@ class Query(graphene.ObjectType):
         search = kwargs.get("search", None)
         if search is not None:
             filters = filters.filter(
-                Q(name__icontains=search)
-                | Q(phone__icontains=search)
-                | Q(email__icontains=search)
+                Q(name__icontains=search) | Q(phone__icontains=search) | Q(email__icontains=search)
             )
 
-        filters = LocationManager().build_user_location_filter_query(info.context.user._u, queryset = filters)
+        filters = LocationManager().build_user_location_filter_query(info.context.user._u, queryset=filters)
 
         return gql_optimizer.query(filters, info)
 

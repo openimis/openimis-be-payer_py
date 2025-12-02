@@ -1,7 +1,6 @@
 import uuid
 
-from contribution.models import Payer, Premium
-from location.test_helpers import create_test_location
+from contribution.models import Payer
 
 
 def create_test_payer(payer_type=Payer.PAYER_TYPE_OTHER, custom_props=None, location=None):

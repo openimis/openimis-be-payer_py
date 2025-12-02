@@ -1,7 +1,6 @@
 from gettext import gettext as _
 import logging
 import graphene
-from graphene.relay import Node
 from core.schema import OpenIMISMutation
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError, PermissionDenied
@@ -177,7 +176,6 @@ class AddFundingMutation(OpenIMISMutation):
 
     @classmethod
     def async_mutate(cls, user, **data):
-        client_mutation_id = data.get("client_mutation_id", None)
         if not user.has_perms(PayerConfig.gql_mutation_payer_update_perms):
             raise PermissionDenied(_("unauthorized"))
 
@@ -192,14 +190,14 @@ class AddFundingMutation(OpenIMISMutation):
 
         try:
             funding = Funding(**{
-                'payer':payer,
+                'payer': payer,
                 'product': product,
-                'pay_date':data.get("pay_date"),
-                'amount':data.get("amount"),
-                'receipt':data.get("receipt"),
+                'pay_date': data.get("pay_date"),
+                'amount': data.get("amount"),
+                'receipt': data.get("receipt"),
             }
             )
-            funding.save(username = user.username)
+            funding.save(user=user)
 
         except Exception as exc:
             logger.exception(exc)
