@@ -115,13 +115,6 @@ class PayerGQLType(DjangoObjectType):
             self.fundings.order_by("-pay_date").all()
         )
 
-    def resolve_premiums(self, info, **kwargs):
-        if not info.context.user.has_perms(PayerConfig.gql_query_payers_perms):
-            raise PermissionDenied(_("unauthorized"))
-        return (
-            self.premuims.fitler(*filter_validity()).order_by("-pay_date").all()
-        )
-
     class Meta:
         model = Payer
         interfaces = (graphene.relay.Node,)

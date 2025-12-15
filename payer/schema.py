@@ -54,7 +54,7 @@ class Query(graphene.ObjectType):
         filters = Payer.objects
         show_history = kwargs.get("show_history", False)
         if not show_history:
-            filters = filters.filter(*filter_validity(**kwargs))
+            filters = filters.filter(*Payer.filter_validity(**kwargs))
 
         search = kwargs.get("search", None)
         if search is not None:
