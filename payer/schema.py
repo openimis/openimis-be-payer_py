@@ -2,7 +2,6 @@ import graphene
 from django.db.models import Q
 from django.core.exceptions import PermissionDenied
 import graphene_django_optimizer as gql_optimizer
-from core import filter_validity
 from django.utils.translation import gettext as _, gettext_lazy
 from payer.apps import PayerConfig
 from core.schema import OrderedDjangoFilterConnectionField

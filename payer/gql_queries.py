@@ -7,7 +7,6 @@ from django.utils.translation import gettext_lazy
 from .apps import PayerConfig
 from .models import Payer, Funding
 from core import ExtendedConnection
-from core.models import filter_validity
 
 import django_filters
 from django.utils.translation import gettext as _
