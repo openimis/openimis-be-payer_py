@@ -2,17 +2,8 @@
 import logging
 
 from django.db import migrations
-from core.models import RoleRight
 from core.utils import insert_role_right_for_system
 from payer.apps import DEFAULT_CFG
-
-DEFAULT_CFG = {
-    "gql_query_payers_perms": ["121801"],
-    "gql_mutation_payer_add_perms": ["121802"],
-    "gql_mutation_payer_update_perms": ["122103"],
-    "gql_mutation_payer_delete_perms": ["121804"],
-}
-
 
 
 logger = logging.getLogger(__name__)
@@ -25,19 +16,19 @@ PAYER_DELETE_ROLE_RIGHT_ID = DEFAULT_CFG["gql_mutation_payer_delete_perms"][0]
 PAYER_CREATE_ROLE_RIGHT_ID = DEFAULT_CFG["gql_mutation_payer_add_perms"][0]
 
 
-
 def add_rights(apps, schema_editor):
     """
     Add subscription CRUD permission to the EO and scheme admin.
     """
-    insert_role_right_for_system(EO_ROLE_IS_SYSTEM, PAYER_SEARCH_ROLE_RIGHT_ID)
-    insert_role_right_for_system(SCHEME_ADMIN_ROLE_IS_SYSTEM, PAYER_SEARCH_ROLE_RIGHT_ID)
-    insert_role_right_for_system(SCHEME_ADMIN_ROLE_IS_SYSTEM, PAYER_UPDATE_ROLE_RIGHT_ID)
-    insert_role_right_for_system(SCHEME_ADMIN_ROLE_IS_SYSTEM, PAYER_DELETE_ROLE_RIGHT_ID)
-    insert_role_right_for_system(SCHEME_ADMIN_ROLE_IS_SYSTEM, PAYER_CREATE_ROLE_RIGHT_ID)
-    
+    insert_role_right_for_system(EO_ROLE_IS_SYSTEM, PAYER_SEARCH_ROLE_RIGHT_ID, apps)
+    insert_role_right_for_system(SCHEME_ADMIN_ROLE_IS_SYSTEM, PAYER_SEARCH_ROLE_RIGHT_ID, apps)
+    insert_role_right_for_system(SCHEME_ADMIN_ROLE_IS_SYSTEM, PAYER_UPDATE_ROLE_RIGHT_ID, apps)
+    insert_role_right_for_system(SCHEME_ADMIN_ROLE_IS_SYSTEM, PAYER_DELETE_ROLE_RIGHT_ID, apps)
+    insert_role_right_for_system(SCHEME_ADMIN_ROLE_IS_SYSTEM, PAYER_CREATE_ROLE_RIGHT_ID, apps)
+
 
 def remove_rights(apps, schema_editor):
+    RoleRight = apps.get_model('core', 'RoleRight')
     """
     Remove subscription CRUD permissions to the EO and scheme admin.
     """
