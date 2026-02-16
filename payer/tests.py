@@ -88,7 +88,7 @@ class PayerGQLTestCase(openIMISGraphQLTestCase):
             variables={ 'first':10, 'type':'C'},
         )
 
-        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         content = json.loads(response.content)
 
         self.assertResponseNoErrors(response)
@@ -119,7 +119,7 @@ class PayerGQLTestCase(openIMISGraphQLTestCase):
             },
         )
 
-        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         content = json.loads(response.content)
 
         self.assertResponseNoErrors(response)
@@ -145,7 +145,7 @@ class PayerGQLTestCase(openIMISGraphQLTestCase):
         ''',
             headers={"HTTP_AUTHORIZATION": f"Bearer {self.admin_token}"})
         
-        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         content = json.loads(response.content)
         
     def test_query_funding(self):
@@ -182,7 +182,7 @@ class PayerGQLTestCase(openIMISGraphQLTestCase):
             variables={ 'first':10, 'payerId':Payer.objects.first().uuid},
         )
 
-        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         content = json.loads(response.content)
 
         self.assertResponseNoErrors(response)
