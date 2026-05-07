@@ -1,5 +1,6 @@
 from gettext import gettext as _
 import logging
+from datetime import datetime as py_datetime
 import graphene
 from graphene.relay import Node
 from core.schema import OpenIMISMutation
@@ -24,6 +25,7 @@ def create_or_update_payer(user, data):
         if payer.validity_to:
             raise ValidationError(_('Cannot update historical values'))
         payer.save_history()
+        payer.validity_from = py_datetime.now()
         for (key, value) in data.items():
             setattr(payer, key, value)
     else:
@@ -136,7 +138,7 @@ class DeletePayerMutation(OpenIMISMutation):
                         "list": [
                             {
                                 "message": _("payer.validation.id_does_not_exist")
-                                % {"id", uuid}
+                                % {"id": uuid}
                             }
                         ],
                     }
