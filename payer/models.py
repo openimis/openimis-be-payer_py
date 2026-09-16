@@ -76,6 +76,8 @@ class Payer(core_models.VersionedModel):
         db_table = "tblPayer"
 
 class Funding(core_models.HistoryModel):
+    row_scope = core_models.ParentScope("payer")
+
     class FundingStatus(models.TextChoices):
         PENDING = "N", _("PENDING")
         PAID = "P", _("PAID")
