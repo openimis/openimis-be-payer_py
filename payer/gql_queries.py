@@ -14,6 +14,7 @@ from product.schema import ProductGQLType
 import django_filters
 from django.utils.translation import gettext as _
 from django.core.exceptions import PermissionDenied
+from core.gql import ScopedQuerysetMixin
 
 
 class IntegerFilter(django_filters.NumberFilter):
@@ -73,7 +74,7 @@ class PayerFilter(django_filters.FilterSet):
         }
 
 
-class FundingGQLType(DjangoObjectType):
+class FundingGQLType(ScopedQuerysetMixin, DjangoObjectType):
     uuid = graphene.UUID()
     
     def resolve_uuid(self, info, **kwargs):

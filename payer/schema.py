@@ -6,7 +6,7 @@ from core import filter_validity
 from django.utils.translation import gettext as _, gettext_lazy
 from payer.apps import PayerConfig
 from core.schema import OrderedDjangoFilterConnectionField
-from .models import Payer
+from .models import Payer, Funding
 from location.models import Location, LocationManager
 from product.schema import ProductGQLType
 
@@ -42,6 +42,27 @@ class Query(graphene.ObjectType):
         orderBy=graphene.List(of_type=graphene.String),
     )
     payer = graphene.Field(PayerGQLType, uuid=graphene.UUID())
+
+    # `fundings` and `funding` had no resolver at all: graphene applied the default
+    # resolver, so no right was evaluated. `ScopedQuerysetMixin` +
+    # `Funding.row_scope = ParentScope("payer")` bound the *rows*, not the *right*:
+    # funding amounts and receipts were readable by any caller the row scope did not
+    # exclude. The right expected here is the payer's - already the one
+    # `PayerGQLType.resolve_fundings` and `FundingConnection.resolve_total_count`
+    # require for the same data.
+    def resolve_fundings(self, info, **kwargs):
+        if not info.context.user.has_perms(PayerConfig.gql_query_payers_perms):
+            raise PermissionDenied(_("unauthorized"))
+
+        return Funding.objects.all()
+
+    def resolve_funding(self, info, uuid, **kwargs):
+        if not info.context.user.has_perms(PayerConfig.gql_query_payers_perms):
+            raise PermissionDenied(_("unauthorized"))
+
+        # `FundingGQLType.resolve_uuid` returns `self.id`: the exposed uuid is the
+        # HistoryModel's primary key.
+        return Funding.objects.get(id=uuid)
 
     def resolve_payer(self, info, uuid, **kwargs):
         if not info.context.user.has_perms(PayerConfig.gql_query_payers_perms):
