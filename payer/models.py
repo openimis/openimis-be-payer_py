@@ -63,10 +63,10 @@ class Payer(core_models.VersionedModel):
     # rowid = models.TextField(db_column='RowID', blank=True, null=True)
 
     @classmethod
-    def get_queryset(cls, queryset, user):
+    def get_queryset(cls, queryset, user, *, validity=None, audits=None):
         from location.models import LocationManager
 
-        queryset = cls.filter_queryset(queryset)
+        queryset = cls.apply_row_filters(queryset, validity, audits, default=cls.filter_queryset)
         if settings.ROW_SECURITY and not user._u.is_imis_admin:
             queryset = LocationManager().build_user_location_filter_query(user._u, queryset = Payer.objects, loc_types=['R', 'D'])
         return queryset
