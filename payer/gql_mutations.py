@@ -6,11 +6,26 @@ from core.schema import OpenIMISMutation
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError, PermissionDenied
 from .apps import PayerConfig
-from location.models import Location
+from core.models import target_queryset
+from location.models import Location, LocationManager
 from .models import Payer, PayerMutation, Funding
 
 
 logger = logging.getLogger(__name__)
+
+
+def _location_in_scope(user, location_uuid):
+    """The location ``location_uuid`` names, provided ``user`` may use it.
+
+    A payer written at a location outside the user's districts would be a row
+    its author cannot read back, so the location is checked against the same
+    district scope as reads. An unknown uuid is refused the same way, so the
+    answer does not reveal whether the location exists.
+    """
+    location = Location.objects.filter(uuid=location_uuid).first()
+    if location is None or not LocationManager().is_allowed(user, [location.id]):
+        raise PermissionDenied(_("unauthorized"))
+    return location
 
 
 def create_or_update_payer(user, data):
@@ -19,8 +34,11 @@ def create_or_update_payer(user, data):
     payer_uuid = data.pop("uuid", None)
     location_uuid = data.pop("location_uuid", None)
 
+    location = _location_in_scope(user, location_uuid) if location_uuid is not None else None
+
     if payer_uuid:
-        payer = Payer.objects.get(uuid=payer_uuid)
+        # Only a payer the user may read can be updated.
+        payer = target_queryset(Payer, user).get(uuid=payer_uuid)
         if payer.validity_to:
             raise ValidationError(_('Cannot update historical values'))
         payer.save_history()
@@ -29,8 +47,8 @@ def create_or_update_payer(user, data):
     else:
         payer = Payer.objects.create(**data)
 
-    if location_uuid is not None:
-        payer.location = Location.objects.get(uuid=location_uuid)
+    if location is not None:
+        payer.location = location
 
     payer.save()
 
@@ -128,7 +146,8 @@ class DeletePayerMutation(OpenIMISMutation):
         errors = []
 
         for uuid in data["uuids"]:
-            obj = Payer.objects.filter(uuid=uuid).first()
+            # Only a payer the user may read can be deleted.
+            obj = target_queryset(Payer, user).filter(uuid=uuid).first()
             if obj is None:
                 errors.append(
                     {
@@ -136,7 +155,7 @@ class DeletePayerMutation(OpenIMISMutation):
                         "list": [
                             {
                                 "message": _("payer.validation.id_does_not_exist")
-                                % {"id", uuid}
+                                % {"id": uuid}
                             }
                         ],
                     }
@@ -183,10 +202,11 @@ class AddFundingMutation(OpenIMISMutation):
 
         from product.models import Product
 
-        payer = Payer.objects.filter(
+        # Both ends of the funding must be rows the user may read.
+        payer = target_queryset(Payer, user).filter(
             validity_to__isnull=True, id=data.get("payer_id")
         ).get()
-        product = Product.objects.filter(
+        product = target_queryset(Product, user).filter(
             validity_to__isnull=True, id=data.get("product_id")
         ).get()
 

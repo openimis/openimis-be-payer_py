@@ -7,7 +7,6 @@ from django.utils.translation import gettext as _, gettext_lazy
 from payer.apps import PayerConfig
 from core.schema import OrderedDjangoFilterConnectionField
 from .models import Payer, Funding
-from location.models import Location, LocationManager
 from product.schema import ProductGQLType
 
 from .gql_queries import PayerGQLType, FundingGQLType
@@ -61,14 +60,16 @@ class Query(graphene.ObjectType):
             raise PermissionDenied(_("unauthorized"))
 
         # `FundingGQLType.resolve_uuid` returns `self.id`: the exposed uuid is the
-        # HistoryModel's primary key.
-        return Funding.objects.get(id=uuid)
+        # HistoryModel's primary key. A singular field gets no automatic row
+        # security hook, so start from the scoped queryset: a funding of a payer
+        # outside the user's locations reads as not found.
+        return Funding.get_queryset(Funding.objects.all(), info.context.user).filter(id=uuid).first()
 
     def resolve_payer(self, info, uuid, **kwargs):
         if not info.context.user.has_perms(PayerConfig.gql_query_payers_perms):
             raise PermissionDenied(_("unauthorized"))
 
-        return Payer.objects.get(uuid=uuid)
+        return Payer.get_queryset(Payer.objects.all(), info.context.user).filter(uuid=uuid).first()
 
     def resolve_payers(self, info, **kwargs):
         if not info.context.user.has_perms(PayerConfig.gql_query_payers_perms):
@@ -87,8 +88,8 @@ class Query(graphene.ObjectType):
                 | Q(email__icontains=search)
             )
 
-        filters = LocationManager().build_user_location_filter_query(info.context.user._u, queryset = filters)
-
+        # Row security is applied by `PayerGQLType.get_queryset` (ScopedQuerysetMixin),
+        # from `Payer.row_scope`.
         return gql_optimizer.query(filters, info)
 
 

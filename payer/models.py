@@ -1,6 +1,5 @@
 import uuid
 import itertools
-from django.conf import settings
 from core import models as core_models
 from django.db import models
 from django.utils.translation import gettext as _
@@ -60,16 +59,16 @@ class Payer(core_models.VersionedModel):
 
     audit_user_id = models.IntegerField(db_column="AuditUserID")
 
+    # A payer is attached to a location (in practice a region or a district) or
+    # to none at all. A payer without a location stays visible to everyone holding
+    # the read right, as it did with the filter `resolve_payers` applied by hand
+    # (every location type, hence the four below). The hand-written get_queryset
+    # this replaces dropped the incoming queryset (it restarted from
+    # `Payer.objects`) and dereferenced `user._u`, which crashed for an anonymous
+    # user.
+    row_scope = core_models.LocationScope("location", loc_types=("R", "D", "W", "V"))
+
     # rowid = models.TextField(db_column='RowID', blank=True, null=True)
-
-    @classmethod
-    def get_queryset(cls, queryset, user):
-        from location.models import LocationManager
-
-        queryset = cls.filter_queryset(queryset)
-        if settings.ROW_SECURITY and not user._u.is_imis_admin:
-            queryset = LocationManager().build_user_location_filter_query(user._u, queryset = Payer.objects, loc_types=['R', 'D'])
-        return queryset
 
     class Meta:
         managed = True
