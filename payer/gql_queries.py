@@ -97,7 +97,7 @@ class FundingConnection(graphene.Connection):
         return len(self.iterable)
 
 
-class PayerGQLType(DjangoObjectType):
+class PayerGQLType(ScopedQuerysetMixin, DjangoObjectType):
 
     #premiums = graphene.relay.ConnectionField(FundingConnection)
     fundings = graphene.relay.ConnectionField(FundingConnection)
