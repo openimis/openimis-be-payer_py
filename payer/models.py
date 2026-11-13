@@ -1,10 +1,10 @@
 import uuid
-import itertools
 from django.conf import settings
 from core import models as core_models
 from django.db import models
 from django.utils.translation import gettext as _
 from product.models import Product
+
 
 class PayerType(models.Model):
     code = models.CharField(db_column="Code", primary_key=True, max_length=1)
@@ -63,17 +63,18 @@ class Payer(core_models.VersionedModel):
     # rowid = models.TextField(db_column='RowID', blank=True, null=True)
 
     @classmethod
-    def get_queryset(cls, queryset, user):
+    def get_queryset(cls, queryset, user, *, validity=None, audits=None):
         from location.models import LocationManager
 
-        queryset = cls.filter_queryset(queryset)
+        queryset = cls.apply_row_filters(queryset, validity, audits, default=cls.filter_queryset)
         if settings.ROW_SECURITY and not user._u.is_imis_admin:
-            queryset = LocationManager().build_user_location_filter_query(user._u, queryset = Payer.objects, loc_types=['R', 'D'])
+            queryset = LocationManager().build_user_location_filter_query(user._u, queryset=Payer.objects, loc_types=['R', 'D'])
         return queryset
 
     class Meta:
         managed = True
         db_table = "tblPayer"
+
 
 class Funding(core_models.HistoryModel):
     row_scope = core_models.ParentScope("payer")
@@ -104,11 +105,12 @@ class Funding(core_models.HistoryModel):
         related_name="fundings",
     )
     receipt = models.CharField(db_column="Receipt", max_length=50)
-    
+
     class Meta:
         managed = True
         db_table = "tblFunding"
-        
+
+
 class PayerMutation(core_models.UUIDModel, core_models.ObjectMutation):
     payer = models.ForeignKey(Payer, models.DO_NOTHING, related_name="+")
     mutation = models.ForeignKey(

@@ -4,13 +4,12 @@ from django.db.models import Q
 from django import forms
 from django.utils.translation import gettext_lazy
 
-from invoice.apps import InvoiceConfig
 from .apps import PayerConfig
 from .models import Payer, Funding
 from core import ExtendedConnection
 from core.models import filter_validity
 
-from product.schema import ProductGQLType
+from product.schema import ProductGQLType  # noqa: F401
 import django_filters
 from django.utils.translation import gettext as _
 from django.core.exceptions import PermissionDenied
@@ -19,23 +18,26 @@ from core.gql import ScopedQuerysetMixin
 
 class IntegerFilter(django_filters.NumberFilter):
     field_class = forms.IntegerField
+
+
 class CharFilter(django_filters.CharFilter):
     field_class = forms.CharField
 
 
 class UUIDFilter(django_filters.UUIDFilter):
     field_class = forms.UUIDField
-    
+
+
 class FundingFilter(django_filters.FilterSet):
     uuid = UUIDFilter(
         lookup_expr=["exact"],
         method="filter_uuid",
         label=gettext_lazy("Filter funding by UUID"),
     )
-    
+
     def filter_uuid(self, queryset, name, value):
-        return queryset.filter(id = value)
-    
+        return queryset.filter(id=value)
+
     class Meta:
         model = Funding
         fields = {
@@ -47,6 +49,8 @@ class FundingFilter(django_filters.FilterSet):
             "status": ["exact"],
 
         }
+
+
 class PayerFilter(django_filters.FilterSet):
     location = IntegerFilter(
         lookup_expr=["exact"],
@@ -61,8 +65,10 @@ class PayerFilter(django_filters.FilterSet):
 
     def filter_location(self, queryset, name, value):
         return queryset.filter(Q(location__id=value) | Q(location__parent__id=value))
+
     def filter_type(self, queryset, name, value):
-            return queryset.filter(type=value)
+        return queryset.filter(type=value)
+
     class Meta:
         model = Payer
         fields = {
@@ -76,14 +82,16 @@ class PayerFilter(django_filters.FilterSet):
 
 class FundingGQLType(ScopedQuerysetMixin, DjangoObjectType):
     uuid = graphene.UUID()
-    
+
     def resolve_uuid(self, info, **kwargs):
         return self.id
+
     class Meta:
         model = Funding
         interfaces = (graphene.relay.Node,)
         filterset_class = FundingFilter
         connection_class = ExtendedConnection
+
 
 class FundingConnection(graphene.Connection):
     class Meta:
@@ -99,7 +107,7 @@ class FundingConnection(graphene.Connection):
 
 class PayerGQLType(DjangoObjectType):
 
-    #premiums = graphene.relay.ConnectionField(FundingConnection)
+    # premiums = graphene.relay.ConnectionField(FundingConnection)
     fundings = graphene.relay.ConnectionField(FundingConnection)
 
     def resolve_fundings(self, info, **kwargs):
